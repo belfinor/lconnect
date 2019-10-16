@@ -36,6 +36,7 @@ func Server(addr string, keepAlive time.Duration, maker HandlerMaker) error {
 		}
 
 		con := &connect{
+			id:        <-nextId,
 			addr:      conn.RemoteAddr().String(),
 			keepAlive: keepAlive,
 			con:       conn,

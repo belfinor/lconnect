@@ -1,7 +1,7 @@
 package lconnect
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
-// @version 1.001
+// @version 1.002
 // @date    2019-10-16
 
 import (
@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/belfinor/log"
 )
@@ -20,7 +19,7 @@ type Handler interface {
 
 type HandlerMaker func() Handler
 
-func Server(addr string, keepAlive time.Duration, maker HandlerMaker) error {
+func Server(addr string, maker HandlerMaker) error {
 	ln, err := net.Listen("tcp", addr)
 
 	if err != nil {
@@ -36,10 +35,9 @@ func Server(addr string, keepAlive time.Duration, maker HandlerMaker) error {
 		}
 
 		con := &connect{
-			id:        <-nextId,
-			addr:      conn.RemoteAddr().String(),
-			keepAlive: keepAlive,
-			con:       conn,
+			id:   <-nextId,
+			addr: conn.RemoteAddr().String(),
+			con:  conn,
 		}
 
 		proto := maker()

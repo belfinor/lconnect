@@ -1,10 +1,11 @@
 package lconnect
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
-// @version 1.000
+// @version 1.002
 // @date    2019-10-16
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -31,10 +32,10 @@ func init() {
 }
 
 type connect struct {
-	id        int64
-	addr      string
-	keepAlive time.Duration
-	con       net.Conn
+	id       int64
+	addr     string
+	con      net.Conn
+	lastSend int64
 }
 
 func (c *connect) Close() {
@@ -46,11 +47,20 @@ func (c *connect) Close() {
 }
 
 func (c *connect) Write(p []byte) (int, error) {
-	c.con.SetDeadline(time.Now().Add(c.keepAlive))
+
+	now := time.Now().Unix()
+
+	if c.lastSend+int64(KEEP_ALIVE) <= now {
+		return 0, errors.New("keep alive")
+	}
+
+	c.lastSend = now
+
+	c.con.SetDeadline(time.Now().Add(KEEP_ALIVE))
 	return c.con.Write(p)
 }
 
 func (c *connect) Read(b []byte) (int, error) {
-	c.con.SetDeadline(time.Now().Add(c.keepAlive))
+	c.con.SetDeadline(time.Now().Add(KEEP_ALIVE))
 	return c.con.Read(b)
 }

@@ -7,24 +7,25 @@ package lconnect
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"net"
 	"time"
+
+	"github.com/belfinor/log"
 )
 
 type Client struct {
 	addr        string
-	keepAlive   time.Duration
 	lastConnect int64
 	con         *connect
 	br          *bufio.Reader
 	bw          *bufio.Writer
 }
 
-func NewClient(addr string, keepAlive time.Duration) *Client {
+func NewClient(addr string) *Client {
 
 	client := &Client{
-		addr:      addr,
-		keepAlive: keepAlive,
+		addr: addr,
 	}
 
 	return client
@@ -36,7 +37,7 @@ func (c *Client) connect() bool {
 		return true
 	}
 
-	if c.lastConnect > time.Now().Unix()-5 {
+	if c.lastConnect > time.Now().Unix()-RECONNECT_AFTER_SECONDS {
 		return false
 	}
 
@@ -49,11 +50,13 @@ func (c *Client) connect() bool {
 	}
 
 	c.con = &connect{
-		addr:      c.addr,
-		id:        <-nextId,
-		con:       con,
-		keepAlive: c.keepAlive,
+		addr:     c.addr,
+		id:       <-nextId,
+		con:      con,
+		lastSend: time.Now().Unix(),
 	}
+
+	log.Trace(fmt.Sprintf("connect #%d (%s) opened", c.con.id, c.con.addr))
 
 	c.br = bufio.NewReader(c.con)
 	c.bw = bufio.NewWriter(c.con)
@@ -96,6 +99,24 @@ func (c *Client) Write(data []byte) bool {
 	}
 
 	return false
+}
+
+func (c *Client) WriteRead(data []byte) ([]byte, bool) {
+
+	for i := 0; i < 2; i++ {
+		if !c.Write(data) {
+			continue
+		}
+
+		answ, ok := c.Read()
+		if !ok {
+			continue
+		}
+
+		return answ, ok
+	}
+
+	return nil, false
 }
 
 func (c *Client) Read() ([]byte, bool) {

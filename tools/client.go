@@ -2,6 +2,10 @@
 
 package main
 
+// @author  Mikhail Kirillov <mikkirillov@yandex.ru>
+// @version 1.001
+// @date    2019-10-16
+
 import (
 	"errors"
 	"fmt"
@@ -24,20 +28,17 @@ func (e *Echo) OnMessage(data []byte) ([]byte, error) {
 
 func main() {
 
-	client := lconnect.NewClient(":23456", time.Second*10)
+	client := lconnect.NewClient(":23456")
 
 	for {
 
 		data := []byte(fmt.Sprintf("%d", time.Now().UnixNano()))
 
-		if client.Write(data) {
+		if answer, ok := client.WriteRead(data); ok {
+
 			fmt.Println("> " + string(data))
-			answer, ok := client.Read()
-			if !ok {
-				fmt.Println("broken connection")
-			} else {
-				fmt.Println("< " + string(answer))
-			}
+			fmt.Println("< " + string(answer))
+
 		} else {
 			fmt.Println("broken connection")
 		}

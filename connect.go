@@ -2,7 +2,7 @@ package lconnect
 
 // @author  Mikhail Kirillov <mikkirillov@yandex.ru>
 // @version 1.000
-// @date    2017-10-16
+// @date    2019-10-16
 
 import (
 	"fmt"
